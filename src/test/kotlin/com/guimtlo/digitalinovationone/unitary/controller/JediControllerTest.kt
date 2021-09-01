@@ -1,5 +1,8 @@
-package com.guimtlo.digitalinovationone.controller
+package com.guimtlo.digitalinovationone.unitary.controller
 
+import com.guimtlo.digitalinovationone.controllers.JediController
+import com.guimtlo.digitalinovationone.exceptions.ErrorCode
+import com.guimtlo.digitalinovationone.exceptions.StandardError
 import com.guimtlo.digitalinovationone.model.dto.JediRequest
 import com.guimtlo.digitalinovationone.model.entity.Jedi
 import com.guimtlo.digitalinovationone.services.JediService
@@ -16,15 +19,15 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 
 
-@WebMvcTest
+@WebMvcTest(value = [JediController::class])
 class JediControllerTest(@Autowired val mockMvc: MockMvc) {
 
     @MockkBean
     private lateinit var service: JediService
 
     @Test
-    fun shouldTestCreateJedi() {
-        val jediRequest = JediRequest(name = "Teste", lastName = "lastname")
+    fun `should test create jedi` () {
+        val jediRequest = JediRequest(name = "Teste", lastName = "")
         val jediMock = Jedi(jediId = 1L, name = jediRequest.name, lastName = jediRequest.lastName)
 
         every { service.createJedi(any()) } returns jediMock
@@ -41,5 +44,25 @@ class JediControllerTest(@Autowired val mockMvc: MockMvc) {
         assertEquals(jedi.jediId, jediMock.jediId)
         assertEquals(jedi.name, jediMock.name)
         assertEquals(jedi.lastName, jediMock.lastName)
+    }
+
+    @Test
+    fun `should return badRequest when create jedi` () {
+        val jediRequest = JediRequest(name = "t", lastName = "lastname")
+        val jediMock = Jedi(jediId = 1L, name = jediRequest.name, lastName = jediRequest.lastName)
+
+        every { service.createJedi(any()) } returns jediMock
+
+        val result = mockMvc.perform(
+            post("/jedis")
+                .content(jediRequest.objectToJson())
+                .contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON)
+        ).andReturn().response
+
+        assertEquals(result.status, 400)
+
+        val jedi: StandardError = result.contentAsString.jsonToObject(StandardError::class.java)
+        assertEquals(jedi.code, ErrorCode.VALIDATION_BAD_REQUEST.code)
+        assertEquals(jedi.status, ErrorCode.VALIDATION_BAD_REQUEST.status.value())
     }
 }

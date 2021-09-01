@@ -55,6 +55,6 @@ class ApiExceptionHandler {
             errors = errors
         )
 
-        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body<StandardError?>(err)
+        return ResponseEntity.status(HttpStatus.valueOf(err.status)).body<StandardError?>(err)
     }
 }
